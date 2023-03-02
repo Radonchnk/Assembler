@@ -1,0 +1,38 @@
+  1|main:
+  2|      MOV R0, #message_ask
+  3|      STR R0, .WriteString
+  4|      LDR R1, .InputNum //input num
+  5|      CMP R1, #1
+  6|      BNE if_statement
+  7|      MOV R0, #message_yes
+  8|      STR R0, .WriteString
+  9|      STR R1, .WriteUnsignedNum
+ 10|      B main
+ 11|if_statement:
+ 12|      MOV R2, #2        //i
+ 13|Start_main_loop:
+ 14|      CMP R2, R1
+ 15|      BEQ End_main_loop
+ 16|      MOV R3, R1        // creating copy
+ 17|Remainder_Of_Divisions:
+ 18|      SUB R3, R3,R2
+ 19|      SUB R0, R2, #1
+ 20|      CMP R3,R0
+ 21|      BGT Remainder_Of_Divisions
+ 22|      CMP R3, #0
+ 23|      BNE If_staitment
+ 24|      MOV R0, #message_no
+ 25|      STR R0, .WriteString
+ 26|      STR R1, .WriteUnsignedNum
+ 27|      B main
+ 28|If_staitment:
+ 29|      ADD R2, R2, #1
+ 30|      B Start_main_loop
+ 31|End_main_loop:
+ 32|      MOV R0, #message_yes
+ 33|      STR R0, .WriteString
+ 34|      STR R1, .WriteUnsignedNum
+ 35|      B main
+ 36|message_yes: .ASCIZ "\nIt`s a prime number: "
+ 37|message_no: .ASCIZ "\nIt`s NOT a prime number: "
+ 38|message_ask: .ASCIZ "\nWrite number to check: "
