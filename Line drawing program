@@ -1,0 +1,88 @@
+//Set up interrupts
+  2|      MOV R0, #paint
+  3|      STR R0,.PixelISR
+  4|      MOV R0,#1
+  5|      STR R0,.PixelMask //Set pixel click interrupts on
+  6|      MOV R0,#1
+  7|      STR R0,.InterruptRegister //Enable all interrupts
+  8|//Set up colour
+  9|      MOV R3, #0        //R3 counter to handle klicks
+ 10|mainLoop: B mainLoop    //input waiting
+ 11|paint:
+ 12|// R7 - B
+ 13|// R8 - A
+ 14|// R6 - error
+ 15|//click checker
+ 16|      CMP R3, #0
+ 17|      BEQ first_click_detected
+ 18|      LDR R2, .LastPixelClicked //last click
+ 19|      MOV R1, #0        // counter
+ 20|start_second_click_xy_counting:
+ 21|      CMP R2, #64
+ 22|      BLT end_second_click_xy_counting
+ 23|      ADD R1, R1, #1
+ 24|      SUB R2, R2, #64
+ 25|      B start_second_click_xy_counting
+ 26|end_second_click_xy_counting:
+ 27|      MOV R10, R2       //x
+ 28|      MOV R9, R1        //y
+ 29|      MOV R3, #0
+ 30|      MOV R5, #.red     //constant for collor
+ 31|      MOV R4, #.PixelScreen //conecting pixel screen
+ 32|// start A = (y2lsl8 - y1lil8)lsr
+ 33|      MOV R8, R9        // move y2 to A register
+ 34|      SUB R8, R8, R11   // y2 - y1 in A register
+ 35|      LSL R8, R8, # 1   // A*2
+ 36|      MOV R6, R8        // take first part for error
+ 37|// end
+ 38|// start B = (x2lsl8 - x1lil8)lsr
+ 39|      MOV R7, R10       // move x2 to B register
+ 40|      SUB R7, R7, R12   // x2 - x1 in B register
+ 41|      SUB R6, R6, R7    // another part of error
+ 42|      LSL R7, R7, # 1   // B*2
+ 43|// end
+ 44|// start of for x1 + 1 to x2
+ 45|      SUB R10, R10, #1  // remove 1 from x1 max, monkeypatch
+ 46|start_for:
+ 47|      CMP R12, R10      // comparing x1 and x2
+ 48|      BGT end_for       // if x1 bigger then x2, end for
+ 49|      ADD R6, R6, R8    // add A to error
+ 50|      B draw_pixel      // jump to pixel drawing
+ 51|end_drawing:
+ 52|//start of if statiment
+ 53|      CMP R6, #0        // compare error to 0
+ 54|      BLT else          // if less -> end while
+ 55|      ADD R11, R11, #1  // add 1 to counter x1
+ 56|      SUB R6, R6, R7    // error - B
+ 57|else:
+ 58|      ADD R12, R12, #1  // add 1 to y1
+ 59|      B start_for
+ 60|//end if staitment
+ 61|// end of for
+ 62|// start of drawing function
+ 63|draw_pixel:
+ 64|      MOV R0, R11       // y1 to temp
+ 65|      LSL R0, R11, #6   // y1 ties 64 to represend in pixels
+ 66|      ADD R0, R0, R12   // y1 to temp
+ 67|      LSL R0,R0,#2      //multiply pixel number by 4 to get byte address
+ 68|      STR R5, [R4+R0]   // write pixel
+ 69|      B end_drawing
+ 70|end_for:
+ 71|      RFE
+ 72|first_click_detected:
+ 73|      LDR R2, .LastPixelClicked //last click
+ 74|      MOV R1, #0        // counter
+ 75|start_first_click_xy_counting:
+ 76|      CMP R2, #64
+ 77|      BLT end_first_click_xy_counting
+ 78|      ADD R1, R1, #1
+ 79|      SUB R2, R2, #64
+ 80|      B start_first_click_xy_counting
+ 81|end_first_click_xy_counting:
+ 82|      MOV R12, R2       //x
+ 83|      MOV R11, R1       //y
+ 84|      MOV R3, #1
+ 85|      MOV R0, #paint
+ 86|      STR R0,.PixelISR
+ 87|      MOV R0,#1
+ 88|      RFE
